@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package sjm.pb.ex; // EnSite Export
+
+//============================================================================
+
+message Timestamp {
+    int32 seconds      = 1;
+    int32 microseconds = 2;
+}
+
+//============================================================================
+
+message SampleData {
+    bool isValid = 1;
+    float value  = 2;
+    string label = 3;
+}
+
+message LocSampleData {
+    bool isValid = 1;
+    float x      = 2;
+    float y      = 3;
+    float z      = 4;
+    string label = 5;
+}
+
+//============================================================================
+
+message BioCatheter {
+    string name 		   = 1;
+    repeated SampleData channel    = 2;
+};
+
+message LocCatheter {
+    string name 		   = 1;
+    repeated LocSampleData channel = 2;
+}
+
+//============================================================================
+
+message EcgTimepoint {
+    Timestamp  t   = 1;
+    SampleData i   = 2;
+    SampleData ii  = 3;
+    SampleData iii = 4;
+    SampleData avr = 5;
+    SampleData avl = 6;
+    SampleData avf = 7;
+    SampleData v1  = 8;
+    SampleData v2  = 9;
+    SampleData v3  = 10;
+    SampleData v4  = 11;
+    SampleData v5  = 12;
+    SampleData v6  = 13;
+}
+
+message BioTimepoint {
+             Timestamp   t        = 1;
+    repeated BioCatheter catheter = 2;
+}
+
+message LocTimepoint {
+              Timestamp   t        = 1;
+    repeated  LocCatheter catheter = 2;
+}
+
+//============================================================================
+
+message EcgData {
+    repeated EcgTimepoint data = 1;
+}
+
+message BioData {
+    repeated BioTimepoint data = 1;
+}
+
+message LocData {
+    repeated LocTimepoint data = 1;
+}
+
+//============================================================================
+
+enum MapTagType
+{
+    label = 0;
+    lesion = 1;
+}
+
+message AddMapTag
+{
+    MapTagType type = 1;
+    float x = 2;
+    float y = 3;
+    float z = 4;
+    string text = 5;
+}
+
+//============================================================================
+
+enum Version
+{
+    dummy = 0; // enum required to start with 0
+    proto_version = 1; // increment with any changes to this file (at release time).
+}
+
+message GetVersion
+{
+    // no data in request
+}
+
+message GetVersionReply
+{
+    int32 version = 1; // Always send proto_version from Version enum
+}
+
+//============================================================================
+
+message PingRequest
+{
+    Timestamp request_tx_time = 1;
+}
+
+message PingResponse
+{
+    Timestamp request_tx_time = 1;
+    Timestamp response_tx_time = 2;  // Same as request Rx time
+}
+
+//============================================================================
+
+enum SurfaceUpdateType
+{
+    none = 0;          // No update
+    all = 1;           // All surfaces are being updated, any missing are presumed deleted
+    attrib = 2;        // Attribute-only update for all surfaces, no surface polygon data, missing ID means deleted
+    edit = 3;          // Update to only the surface currently being edited
+    no_edit = 4;       // Update to surfaces not being edited
+}
+
+message Color4
+{
+    float r = 1;
+    float g = 2;
+    float b = 3;
+    float a = 4;
+}
+
+message SurfaceAttribs
+{
+    int32 id = 1;
+    Color4 color = 2;
+    string name = 3;
+    repeated uint32 triangle_indices = 4;
+}
+
+message SurfaceUpdate
+{
+    SurfaceUpdateType type = 1;
+    repeated float vertices = 2;
+    repeated float normals = 3;
+    repeated SurfaceAttribs surfaces = 4;
+}

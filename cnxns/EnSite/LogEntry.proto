@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package sjm.MBLogger.PB;
+
+message Timestamp {
+	sfixed64 sec = 1;  // seconds
+	sfixed64 nsec = 2; // nanoseconds
+}
+
+message Envelope {
+	string message_id = 1;
+	string correlation_id = 2;
+	string content_type = 3;
+	string message_type = 4;
+	string application_id = 5;
+}
+
+message Meta
+{
+	string channel = 1;
+	Timestamp timestamp = 2;
+	Envelope envelope = 3;
+}
+
+message LogEntry {
+	Meta meta = 1;
+	bytes message = 2;
+}
+

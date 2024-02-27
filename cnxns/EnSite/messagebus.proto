@@ -1,0 +1,162 @@
+/*!****************************************************************************
+ *   @file messagebus.proto
+ *   @copyright 2019 Abbott
+ *   @warning This is a preliminary document and is not ready for distribution.
+ *
+ *******************************************************************************/
+syntax = "proto3";
+
+// @defgroup Common Common Messages
+// @brief A set of messages that all devices and applications must implement & use
+
+/// All messages in the messagebus.proto file are in the MessageBus namespace
+
+// @namespace MessageBus
+// @{
+
+package MessageBus;
+
+// this is a hack to create a version constant for this file
+// by defining an enum with a field equal to the current version
+enum Version {
+    dummy = 0;  // just a placeholder for requirement of 1st enum element=0
+    value = 2;  // the version of this file
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// @brief This determines the importance of the message.
+
+// The levels are, in order of decreasing importance:
+
+enum LogLevel {
+
+    // Error conditions (something is known to be wrong)
+    error   = 0;
+
+    // Warning conditions (something might be wrong)
+    warning = 1;
+
+    // Information messages
+    info    = 2;
+
+    // Debug-level messages (may be very verbose)
+    debug   = 3;
+}
+
+// @brief The readiness state of a device on the message bus
+//
+enum PresenceStatus {
+    Error           = 0; // Device is in some error state preventing normal operations
+    Initializing    = 1; // Device is initializing
+    Ready           = 2; // Device is in a normal state ready to communicate
+    Updating        = 3; // Device is applying a firmware update and not operating normally
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+// @ingroup Common
+// @brief Send an internal log message
+//
+// This message allows a device or application to send an information log
+// message.  Ideally, there is a centralized service that collects these
+// log messages and makes them available for browsing.
+//
+// These messages should be published to the xyz.LOG channel, where xyz
+// is the unique prefix for a device or application.
+//
+// @todo This should be extended to be minimally compatible with syslog,
+// allowing a syslogng plugin to be used to push all system logs to the LOG
+// channel automatically.  That would entail adding a facility field, and
+// an extension of the LogLevel enum values to match.
+
+message LogData {
+    // the date/time related to the log message (which may not be the timestamp when it was sent)
+    //
+    // @todo this should use the protobuf timestamp type
+    //
+    // @todo if this doesn't become type 'timestamp', the resolution and epoch need to be defined
+    uint64          timestamp       = 1;
+
+    // The importance of the message
+    LogLevel        level           = 2;
+
+    // The device/application that sent the message
+    //
+    // @todo This information should be available from the message envelope
+    string          sender          = 3;
+
+    // The contents of the log message.   This may contain arbitrary text
+    string          message         = 4;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// @ingroup Common
+// @brief Inform message bus neighbors of device/application presence
+//
+// The presence message is used to determine the presence (or absence, eventually)
+// of another device on the message bus.  This is needed because there is no
+// direct connection between any two devices, so the establishment/closure of a
+// TCP connection cannot be used.
+//
+// Every application or device is expected to regularly publish this
+// message on the HMB.PRESENCE channel.  Use of a common channel allows any
+// other device on the message bus to react to the presence state change as
+// needed.
+//
+// Many of the fields in this message are optional.  Devices/application
+// other than the original MAY send a message indicating positive absence
+// of any devices/applications that have been determined to be absent.
+//
+// Any device that is shutting down or restarting can send a message
+// indicating absence.
+//
+// @todo Examine (during first implementation spike) the need for specifying
+// both the frequency and the threshold.
+
+message PresenceMessage {
+
+    // The current status of the device or application
+    //
+    // @todo define this better in the first implementation spike
+    PresenceStatus          status              = 1;
+
+    // Information about the generic class of the sending device (such as
+    // "Harmony Amplifier" or "TactiSys")
+    string                  device_type         = 2;
+
+    // Information about the specific device (to distinguish the case when
+    // multiples of the same device_type on the same network)
+    string                  device_name         = 3;
+
+    // The serial number of the device/application
+    string                  serial_number       = 4;
+
+    // Optional: Information about the version number of the device/application
+    string                  device_version      = 6;
+
+    // Optional: A UUID generated at boot/startup time.  This is used to detect restarts.
+    string                  device_session      = 7;
+
+    // Optional: The channel name for a channel that is specific to this device (if present)
+    string                  device_channel      = 8;
+
+    // Optional: A list of channels that this device is expected to publish on.
+    repeated string         published_channels  = 9;
+
+    // Optional: A list of channels that this device is expected to subscribe to.
+    repeated string         subscribed_channels = 10;
+
+    // How often this device will send a new presence message (measured in milliseconds)
+    uint32                  heartbeat_frequency = 11;
+
+    // How many missed presence messages constitute the presumed absence of this device
+    // (measured in milliseconds)
+    uint32                  heartbeat_threshold = 12;
+}
+
+
+// close namespace MessageBus
+// @}
